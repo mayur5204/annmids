@@ -1,0 +1,44 @@
+Mids4a
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
+# Load dataset
+df = pd.read_csv("abalone - abalone.csv")
+
+# Encode categorical 'Sex' column
+df['Sex'] = LabelEncoder().fit_transform(df['Sex'])
+
+# Define age categories based on Rings
+bins = [0, 7, 10, float('inf')]
+labels = ['young', 'middle-aged', 'old']
+df['AgeGroup'] = pd.cut(df['Rings'], bins=bins, labels=labels)
+
+# Encode target labels
+label_encoder = LabelEncoder()
+y = label_encoder.fit_transform(df['AgeGroup'])
+
+# Features
+X = df.drop(['Rings', 'AgeGroup'], axis=1)
+
+# Standardize features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+
+# Train classifier
+model = RandomForestClassifier(random_state=42)
+model.fit(X_train, y_train)
+
+# Predict and evaluate
+y_pred = model.predict(X_test)
+
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("\nClassification Report:\n")
+print(classification_report(y_test, y_pred, target_names=label_encoder.classes_))
+
