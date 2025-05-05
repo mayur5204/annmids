@@ -1,0 +1,49 @@
+Mids1
+
+pip install seaborn
+
+import pandas as pd
+import seaborn as sns
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+
+df = pd.read_csv('Downloads/Titanic-Dataset - Titanic-Dataset.csv')
+df.head()
+
+df.info()
+
+df.isnull().sum()
+
+df.describe(include='all')
+
+df.drop(columns=['Cabin'],axis=1,inplace=True)
+
+df.drop(columns=['PassengerId','Name', 'Ticket'],axis=1,inplace=True)
+df.sample(5)
+
+df.describe()
+
+df['Family']=df['SibSp']+df['Parch']+1
+df.head()
+
+df.fillna({"Age": df["Age"].median()}, inplace=True)
+df.fillna({"Embarked": df["Embarked"].mode()[0]}, inplace=True)
+
+le = LabelEncoder()
+df['Sex'] = le.fit_transform(df['Sex'])
+df = pd.get_dummies(df, columns=['Embarked'], drop_first=True)
+
+scaler = StandardScaler()
+df[['Age', 'Fare']] = scaler.fit_transform(df[['Age', 'Fare']])
+
+corm = df.corr(numeric_only=True)
+print('Correlation Matrix:')
+print(corm['Survived'].sort_values(ascending=False))
+print('\n')
+from sklearn.ensemble import RandomForestClassifier
+model = RandomForestClassifier()
+x = df.drop('Survived', axis=1)
+y = df['Survived']
+model.fit(x , y)
+feature_importances = pd.Series(model.feature_importances_, index=x.columns)
+print('Feature Importances:')
+print(feature_importances.sort_values(ascending=False))
