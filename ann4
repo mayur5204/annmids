@@ -1,0 +1,67 @@
+Ann4
+
+
+import numpy as np
+
+
+
+
+
+
+class ART1:
+    def __init__(self, input_size, num_categories, rho=0.5):
+        self.input_size = input_size
+        self.num_categories = num_categories
+        self.rho = rho 
+        self.weights = np.ones((num_categories, input_size))  
+        self.reset_categories()
+
+    def reset_categories(self):
+        self.activated = np.zeros(self.num_categories)
+
+    def match(self, input_pattern, j):
+        """Check if input matches the template within vigilance"""
+        wj = self.weights[j]
+        intersection = np.minimum(input_pattern, wj).sum()
+        if (intersection / input_pattern.sum()) >= self.rho:
+            return True
+        return False
+
+    def train(self, input_patterns):
+        for input_pattern in input_patterns:
+            input_pattern = np.array(input_pattern)
+            self.reset_categories()
+            for j in range(self.num_categories):
+                if self.match(input_pattern, j):
+                    self.weights[j] = np.minimum(self.weights[j], input_pattern)
+                    break  
+            else:
+                print("No suitable category found for pattern:", input_pattern)
+
+    def predict(self, input_pattern):
+        input_pattern = np.array(input_pattern)
+        for j in range(self.num_categories):
+            if self.match(input_pattern, j):
+                return j
+        return -1  
+
+
+
+
+
+
+if __name__ == "__main__":
+    patterns = [
+        [1, 0, 0, 1, 1],
+        [1, 0, 0, 1, 0],
+        [0, 1, 1, 0, 0],
+        [0, 1, 1, 0, 1]
+    ]
+
+    art = ART1(input_size=5, num_categories=3, rho=0.6)
+    art.train(patterns)
+
+    test = [1, 0, 0, 1, 1]
+    result = art.predict(test)
+    print(f"Pattern {test} matched with category {result}")
+
