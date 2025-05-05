@@ -1,0 +1,128 @@
+mids2
+
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+df = pd.read_csv("Mental-Health-Twitter.csv")
+df.head()
+
+df.shape
+
+df.isnull().sum() # check for missing values
+
+df = df[['post_text']]
+df.head()
+
+df.describe()
+
+df.shape
+
+df["post_text"] = df["post_text"].apply(lambda x: " ".join(x.lower() for x in x.split()))
+df["post_text"] = df["post_text"].str.replace(r"\d", "", regex=True)
+df["post_text"] = df["post_text"].str.replace(r"[^\w\s]", "", regex=True)
+
+!pip install textblob
+!pip install nltk
+from nltk.corpus import stopwords
+from textblob import TextBlob
+from textblob import Word
+
+import nltk
+nltk.download("stopwords")
+from nltk.corpus import stopwords
+sw = stopwords.words("english")
+df["post_text"] = df["post_text"].apply(lambda x: " ".join(x for x in x.split() if x not in sw))
+
+!pip install textblob
+from textblob import TextBlob
+
+!unzip /usr/share/nltk_data/corpora/wordnet.zip -d /usr/share/nltk_data/corpora/
+
+from textblob import Word
+nltk.download("wordnet")
+nltk.download("omw-1.4")
+df["post_text"] = df["post_text"].apply(lambda x: " ".join([Word(x).lemmatize()]))
+
+!pip install spacy
+!python -m spacy download en_core_web_sm
+!pip install -U NLTK
+
+import nltk
+nltk.download('punkt_tab')
+nltk.download('punkt')
+from nltk.tokenize import word_tokenize
+df["tokens"] = df["post_text"].apply(lambda x: TextBlob(x).words)
+
+df.head()
+
+blob_emptylist = []
+for i in df["post_text"]:
+    blob = TextBlob(i).sentiment 
+    blob_emptylist.append(blob)
+
+df2 = pd.DataFrame(blob_emptylist)
+df2.head()
+
+df3 = pd.concat([df.reset_index(drop=True), df2], axis=1)
+df3.head()
+
+df4 = df3[['post_text','tokens','polarity']]
+df4.head(6)
+
+df4["Sentiment"] =  np.where(df4["polarity"] >= 0 , "Positive", "Negative")
+df4.head()
+
+result = df4["Sentiment"].value_counts()
+
+sns.set_style("whitegrid")
+sns.despine(left=True, bottom=True)
+result.plot(kind="bar", rot=0, color=["plum","cyan"]);
+
+df4.groupby("Sentiment").count()
+
+df4.groupby("polarity").max().head(5)
+
+plt.figure(figsize=(8,4))
+sns.histplot(df4['polarity'], bins=15, kde=False)
+plt.xlabel('Polarity')
+plt.ylabel('Count')
+plt.title('Polarity Distribution')
+
+plt.figure(figsize=(10,6))
+sns.countplot(x='Sentiment', data=df4,order=df4['Sentiment'].value_counts().index)
+plt.xlabel('Sentiment')
+plt.ylabel('Count')
+plt.title('Sentiment Distribution')
+plt.show()
+
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
+
+X_train, X_test, y_train, y_test = train_test_split(df4['post_text'], df4['Sentiment'], test_size=0.2, random_state=42)
+
+vectorizer = CountVectorizer()
+X_train = vectorizer.fit_transform(X_train)
+X_test = vectorizer.transform(X_test)
+
+from sklearn.neighbors import KNeighborsClassifier
+knn = KNeighborsClassifier()
+knn.fit(X_train, y_train)
+
+accuracy = knn.score(X_test, y_test)
+print('Accuracy:', accuracy)
+
+print('The accuracy of the KNN Classifier is',round(accuracy_score(knn.predict(X_test), y_test)*100,2),'%')
+
+print(classification_report(y_test, knn.predict(X_test)))
+
+from sklearn.metrics import ConfusionMatrixDisplay
+cm = confusion_matrix(y_test, knn.predict(X_test))
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=knn.classes_)
+disp.plot()
+
